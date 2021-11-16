@@ -8,6 +8,7 @@
 
 #include "KleinGordonOperation.h"
 
+#include <stdexcept>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/grid/grid_generator.h>
@@ -314,20 +315,17 @@ namespace KGE
       double wtime       = 0;
       double output_time = 0;
 
-      for (; time <= final_time; time += time_step, ++timestep_number)
+      for(; time <= final_time; time += time_step, ++timestep_number)
       {
          timer.restart();
-         if (timestep_number % output_timestep_skip == 0)
-         {
+         if(timestep_number % output_timestep_skip == 0)
             output_results(timestep_number / output_timestep_skip);
-         }
          output_time += timer.wall_time();
 
          timer.restart();
          klein_gordon_op.RK4_step(solution_U, solution_V, time, time_step);
          wtime += timer.wall_time();
       }
-
       timer.restart();
       output_results(timestep_number / output_timestep_skip + 1);
       output_time += timer.wall_time();
@@ -342,13 +340,10 @@ namespace KGE
    template <int dim, int fe_degree>
    double KleinGordonProblem<dim, fe_degree>::getStepSize() const
    {
-      if (set_time_step == false) {
-         std::cerr << "Error: function called before step size was computed. "
-                      "'run' function should be called first." << std::endl;
-         return 0.0;
-      }
-
-      return this->time_step;
+      if (set_time_step == false)
+         throw std::domain_error("function called before step size was computed, "
+                                 "'run' member function should be called first");
+               return this->time_step;
    }
 
 } // namespace KGE

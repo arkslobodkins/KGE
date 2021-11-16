@@ -2,8 +2,8 @@
  * Summer 2021
  */
 
-#ifndef DABSOLVER_H
-#define DABSOLVER_H
+#ifndef RUN_KGE_H
+#define RUN_KGE_H
 
 #include "Conditions.h"
 #include "KleinGordonProblem.h"
@@ -25,6 +25,7 @@ namespace KGE
                   left_global, right_global,
                   wave_speed_global, alpha_global, bc_global,
                   initial_time_global, final_time_global, output_timestep_skip_global);
+      KGE_problem.getStepSize();
 
       KGE_problem.run();
    }
