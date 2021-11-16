@@ -1,3 +1,8 @@
+/* Arkadijs Slobodkins
+ * Summer 2021
+ * Based on steps 48 and 59 from dealii examples
+ */
+
 #ifndef KG_OP
 #define KG_OP
 
@@ -34,6 +39,7 @@ namespace KGE
    class KleinGordonOperation
    {
    public:
+      KleinGordonOperation() = delete; // cannot use default constructor
       KleinGordonOperation(
             Function<dim> &_boundary_u,
             Function<dim> &_boundary_v,

@@ -1,3 +1,7 @@
+/* Arkadijs Slobodkins
+ * Summer 2021
+ */
+
 #ifndef DABSOLVER_H
 #define DABSOLVER_H
 
@@ -12,7 +16,7 @@ namespace KGE
    template<int dim, int fe_degree>
    void RunKGE()
    {
-      KGENonHomogenous<dim> kge(wave_speed_global, alpha_global, bc_global, 1, 0.0);
+      KGEConditions<dim> kge(wave_speed_global, alpha_global, bc_global, 1, 0.0);
 
       KleinGordonProblem<dim, fe_degree>
       KGE_problem(kge.analytical_U, kge.analytical_V,

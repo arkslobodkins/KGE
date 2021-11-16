@@ -1,3 +1,8 @@
+/* Arkadijs Slobodkins
+ * Summer 2021
+ * Based on steps 48 and 59 from dealii examples
+ */
+
 #ifndef KGP_H
 #define KGP_H
 
@@ -18,13 +23,13 @@
 namespace KGE
 {
    using namespace dealii;
-   #define num_cells 64
 
 
    template <int dim, int fe_degree>
    class KleinGordonProblem
    {
    public:
+      KleinGordonProblem() = delete; // cannot use default constructor
       KleinGordonProblem(
             Function<dim> *_analytical_solution_U
             , Function<dim> *_analytical_solution_V
@@ -42,7 +47,7 @@ namespace KGE
             , const unsigned int _output_timestep_skip);
 
       void run();
-      double getStepSize();
+      double getStepSize() const;
 
    private:
       ConditionalOStream pcout;
@@ -128,7 +133,9 @@ namespace KGE
    template <int dim, int fe_degree>
    void KleinGordonProblem<dim, fe_degree>::make_grid_and_dofs()
    {
-      GridGenerator::subdivided_hyper_cube(triangulation, num_cells, left_end, right_end);
+      constexpr unsigned int num_refinements {6-dim};
+      GridGenerator::hyper_cube(triangulation, left_end, right_end);
+      triangulation.refine_global(num_refinements);
       const double cell_diameter = triangulation.last()->diameter() / std::sqrt(dim);
       time_step = 0.25 * cfl_number * cell_diameter;
       set_time_step= true;
@@ -333,7 +340,7 @@ namespace KGE
 
 
    template <int dim, int fe_degree>
-   double KleinGordonProblem<dim, fe_degree>::getStepSize()
+   double KleinGordonProblem<dim, fe_degree>::getStepSize() const
    {
       if (set_time_step == false) {
          std::cerr << "Error: function called before step size was computed. "

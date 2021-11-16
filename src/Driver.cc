@@ -20,6 +20,10 @@
  * Summer 2021
  */
 
+#if __cplusplus <= 199711L
+#error Requires support of C++11 or newer
+#else
+
 #include "RunKGE.h"
 #include "ProblemParams.h"
 
@@ -69,3 +73,5 @@ int main(int argc, char **argv)
 
    return 0;
 }
+
+#endif
