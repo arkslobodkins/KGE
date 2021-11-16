@@ -3,8 +3,8 @@
  */
 
 
-#ifndef COND_NONHOMOGENOUS_H
-#define COND_NONHOMOGENOUS_H
+#ifndef CONDITIONS_H
+#define CONDITIONS_H
 
 #include "ProblemParams.h"
 
@@ -64,6 +64,8 @@ namespace KGE
       }
    };
 
+
+
    template<int dim>
    class BoundaryConditionU: public Function<dim>
    {
@@ -78,91 +80,93 @@ namespace KGE
          alpha(_alpha),
          bc(_bc)
       {}
-
-      virtual double value(const Point<dim> &p, const unsigned int /*component*/) const override
-      {
-         using namespace std;
-         double pi = numbers::PI;
-         double t  = this->get_time();
-
-         if(dim == 1)
-         {
-            double k  = square(wave_speed) * square(pi) + square(alpha);
-            enum class side {xleft, xright} s;
-            if(p[0] > right_global - bound_tol && p[0] < right_global + bound_tol)
-               s = side::xright;
-            else if (p[0] < left_global + bound_tol  && p[0] > left_global - bound_tol)
-               s = side::xleft;
-            else
-               throw range_error("point is not on the boundary");
-
-            switch(bc)
-            {
-               case(DIRICHLET):
-               {
-                  double G = sqrt( square(wave_speed) + square(alpha) / square(pi) );
-                  return sin(pi * (p[0] - G*t));
-               }
-               case(NEUMANN):
-               {
-                  if(s == side::xright)
-                     return 1.0/sqrt(k) * sin(sqrt(k)*t) * pi * right_sign_cos;
-                  else if (s == side::xleft)
-                     return -1.0/sqrt(k) * sin(sqrt(k)*t) * pi * left_sign_cos;
-                  [[fallthrough]];
-               }
-               case(SOMMERFELD):
-               {
-                  if(s == side::xright) {
-                     double gradient = 1.0/sqrt(k) * sin(sqrt(k)*t) * pi * ( right_sign_cos - zero_sin );
-                     double du_dt = cos(sqrt(k)*t) * (zero_sin + right_sign_cos);
-                     return du_dt + gradient;
-                  }
-                  else if (s == side::xleft) {
-                     double gradient = 1.0/sqrt(k) * sin(sqrt(k)*t) * pi * ( left_sign_cos - zero_sin );
-                     double du_dt = cos(sqrt(k)*t) * (zero_sin + left_sign_cos);
-                     return du_dt - gradient;
-                  }
-                  [[fallthrough]];
-               }
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-         }
-
-         else if(dim == 2)
-         {
-            double k  = 2.0 * square(wave_speed) * square(pi) + square(alpha);
-            switch(bc)
-            {
-               case(DIRICHLET):  return 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]);
-               case(NEUMANN):    return 0.0;
-               case(SOMMERFELD): return cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]);
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-         }
-
-         else if(dim == 3)
-         {
-            double k  = 3.0 * square(wave_speed) * square(pi) + square(alpha);
-            switch(bc)
-            {
-               case(DIRICHLET):  return 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]) * sin(pi*p[2]);
-               case(NEUMANN):    return 0.0;
-               case(SOMMERFELD): return cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-         }
-
-      }
+   double value(const Point<dim> &p, const unsigned int /*component*/) const override;
 
    private:
       const double wave_speed;
       const double alpha;
-      enum BC bc;
+      const enum BC bc;
    };
+
+   template<int dim>
+   double BoundaryConditionU<dim>::value(const Point<dim> &p, const unsigned int /*component*/) const
+   {
+      using namespace std;
+      double pi = numbers::PI;
+      double t  = this->get_time();
+
+      if(dim == 1)
+      {
+         double k  = square(wave_speed) * square(pi) + square(alpha);
+         enum class side {xleft, xright} s;
+         if(p[0] > right_global - bound_tol && p[0] < right_global + bound_tol)
+            s = side::xright;
+         else if (p[0] < left_global + bound_tol  && p[0] > left_global - bound_tol)
+            s = side::xleft;
+         else
+            throw range_error("point is not on the boundary");
+
+         switch(bc)
+         {
+            case(DIRICHLET):
+            {
+               double G = sqrt( square(wave_speed) + square(alpha) / square(pi) );
+               return sin(pi * (p[0] - G*t));
+            }
+            case(NEUMANN):
+            {
+               if(s == side::xright)
+                  return 1.0/sqrt(k) * sin(sqrt(k)*t) * pi * right_sign_cos;
+               else if (s == side::xleft)
+                  return -1.0/sqrt(k) * sin(sqrt(k)*t) * pi * left_sign_cos;
+               [[fallthrough]];
+            }
+            case(SOMMERFELD):
+            {
+               if(s == side::xright) {
+                  double gradient = 1.0/sqrt(k) * sin(sqrt(k)*t) * pi * ( right_sign_cos - zero_sin );
+                  double du_dt = cos(sqrt(k)*t) * (zero_sin + right_sign_cos);
+                  return du_dt + gradient;
+               }
+               else if (s == side::xleft) {
+                  double gradient = 1.0/sqrt(k) * sin(sqrt(k)*t) * pi * ( left_sign_cos - zero_sin );
+                  double du_dt = cos(sqrt(k)*t) * (zero_sin + left_sign_cos);
+                  return du_dt - gradient;
+               }
+               [[fallthrough]];
+            }
+            default:
+            throw invalid_argument("Inappropriate boundary conditions were specified");
+         }
+      }
+
+      else if(dim == 2)
+      {
+         double k  = 2.0 * square(wave_speed) * square(pi) + square(alpha);
+         switch(bc)
+         {
+            case(DIRICHLET):  return 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]);
+            case(NEUMANN):    return 0.0;
+            case(SOMMERFELD): return cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]);
+            default:
+               throw invalid_argument("Inappropriate boundary conditions were specified");
+         }
+      }
+
+      else if(dim == 3)
+      {
+         double k  = 3.0 * square(wave_speed) * square(pi) + square(alpha);
+         switch(bc)
+         {
+            case(DIRICHLET):  return 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]) * sin(pi*p[2]);
+            case(NEUMANN):    return 0.0;
+            case(SOMMERFELD): return cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
+            default:
+               throw invalid_argument("Inappropriate boundary conditions were specified");
+         }
+      }
+
+   }
 
 
 
@@ -180,71 +184,72 @@ namespace KGE
          alpha(_alpha),
          bc(_bc)
       {}
-
-      virtual double value(const Point<dim> &p, const unsigned int /*component*/) const override
-      {
-         using namespace std;
-         double pi = numbers::PI;
-         double t  = this->get_time();
-
-         if(dim == 1)
-            switch(bc)
-            {
-               case(DIRICHLET):
-               {
-                  double G = sqrt( square(wave_speed) + square(alpha) / square(pi) );
-                  return -pi * G * cos(pi * (p[0] - G*t));
-               }
-
-               // Computation of jumps for NEUMANN and SOMMERFELD
-               // does not require conditions for V
-               case(NEUMANN)   : return 0.0;
-               case(SOMMERFELD): return 0.0;
-               default: {
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-               }
-            }
-
-         else if(dim == 2)
-         {
-            double k  = 2.0 * square(wave_speed) * square(pi) + square(alpha);
-            switch(bc)
-            {
-               case(DIRICHLET):
-                  return cos(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]);
-
-               // Computation of jumps for NEUMANN and SOMMERFELD
-               // does not require conditions for V
-               case(NEUMANN):    return 0.0;
-               case(SOMMERFELD): return 0.0;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-         }
-
-         else if(dim == 3)
-         {
-            double k  = 3.0 * square(wave_speed) * square(pi) + square(alpha);
-            switch(bc)
-            {
-               case(DIRICHLET):
-                  return cos(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]) * sin(pi*p[2]);
-
-               // Computation of jumps for NEUMANN and SOMMERFELD
-               // does not require conditions for V
-               case(NEUMANN):    return 0.0;
-               case(SOMMERFELD): return 0.0;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-         }
-      }
+      virtual double value(const Point<dim> &p, const unsigned int /*component*/) const override;
 
    private:
       const double wave_speed;
       const double alpha;
-      enum BC bc;
+      const enum BC bc;
    };
+
+   template<int dim>
+   double BoundaryConditionV<dim>::value(const Point<dim> &p, const unsigned int /*component*/) const
+   {
+      using namespace std;
+      double pi = numbers::PI;
+      double t  = this->get_time();
+
+      if(dim == 1)
+         switch(bc)
+         {
+            case(DIRICHLET):
+            {
+               double G = sqrt( square(wave_speed) + square(alpha) / square(pi) );
+               return -pi * G * cos(pi * (p[0] - G*t));
+            }
+
+            // Computation of jumps for NEUMANN and SOMMERFELD
+            // does not require conditions for V
+            case(NEUMANN)   : return 0.0;
+            case(SOMMERFELD): return 0.0;
+            default:
+               throw invalid_argument("Inappropriate boundary conditions were specified");
+         }
+
+      else if(dim == 2)
+      {
+         double k  = 2.0 * square(wave_speed) * square(pi) + square(alpha);
+         switch(bc)
+         {
+            case(DIRICHLET):
+               return cos(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]);
+
+            // Computation of jumps for NEUMANN and SOMMERFELD
+            // does not require conditions for V
+            case(NEUMANN):    return 0.0;
+            case(SOMMERFELD): return 0.0;
+            default:
+               throw invalid_argument("Inappropriate boundary conditions were specified");
+         }
+      }
+
+      else if(dim == 3)
+      {
+         double k  = 3.0 * square(wave_speed) * square(pi) + square(alpha);
+         switch(bc)
+         {
+            case(DIRICHLET):
+               return cos(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]) * sin(pi*p[2]);
+
+               // Computation of jumps for NEUMANN and SOMMERFELD
+               // does not require conditions for V
+               case(NEUMANN):    return 0.0;
+               case(SOMMERFELD): return 0.0;
+               default:
+                  throw invalid_argument("Inappropriate boundary conditions were specified");
+         }
+      }
+   }
 
 
 
@@ -277,7 +282,7 @@ namespace KGE
                   throw invalid_argument("Inappropriate boundary conditions were specified");
             }
 
-         else if(dim == 2)
+         else if(dim >= 2)
             switch(bc)
             {
                case(DIRICHLET):  return 0.0;
@@ -287,15 +292,6 @@ namespace KGE
                   throw invalid_argument("Inappropriate boundary conditions were specified");
             }
 
-         else if(dim == 3)
-            switch(bc)
-            {
-               case(DIRICHLET):  return 0.0;
-               case(NEUMANN):    return 0.0;
-               case(SOMMERFELD): return 0.0;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
       }
 
    private:
@@ -324,7 +320,6 @@ namespace KGE
                            const unsigned int /*component*/) const override
       {
          using namespace std;
-         double result = 0.0;
          double pi = numbers::PI;
 
          if(dim == 1)
@@ -333,56 +328,32 @@ namespace KGE
                case(DIRICHLET):
                {
                   double G = sqrt( square(wave_speed) + square(alpha) / square(pi) );
-                  result   = -pi * G * cos(pi*p[0]);
-                  break;
+                  return -pi * G * cos(pi*p[0]);
                }
-               case(NEUMANN):
-               {
-                  result = sin(pi*p[0]);
-                  break;
-               }
-               case(SOMMERFELD):
-               {
-                  result = sin(pi*p[0]) + cos(pi*p[0]);
-                  break;
-               }
+               case(NEUMANN):    return sin(pi*p[0]);
+               case(SOMMERFELD): return sin(pi*p[0]) + cos(pi*p[0]);
                default:
                   throw invalid_argument("Inappropriate boundary conditions were specified");
             }
 
-         else if(dim == 2)
+         else if(dim >= 2)
+         {
+            double result = 1.0;
             switch(bc)
             {
                case(DIRICHLET):
-                  result = sin(pi*p[0]) * sin(pi*p[1]);
-                  break;
+                  for(int i = 0; i < dim; ++i) result *= sin(pi*p[i]);
+                  return result;
                case(NEUMANN):
-                  result = cos(pi*p[0]) * cos(pi*p[1]);
-                  break;
+                  for(int i = 0; i < dim; ++i) result *= cos(pi*p[i]);
+                  return result;
                case(SOMMERFELD):
-                  result = cos(pi*p[0]) * cos(pi*p[1]);
-                  break;
+                  for(int i = 0; i < dim; ++i) result *= cos(pi*p[i]);
+                  return result;
                default:
                   throw invalid_argument("Inappropriate boundary conditions were specified");
             }
-
-         else if(dim == 3)
-            switch(bc)
-            {
-               case(DIRICHLET):
-                  result = sin(pi*p[0]) * sin(pi*p[1]) * sin(pi*p[2]);
-                  break;
-               case(NEUMANN):
-                  result = cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
-                  break;
-               case(SOMMERFELD):
-                  result = cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
-                  break;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-
-         return result;
+         }
       }
 
    private:
@@ -414,7 +385,6 @@ namespace KGE
          using namespace std;
          double pi = numbers::PI;
          double t  = this->get_time();
-         double result = 0.0;
 
          if(dim == 1)
          {
@@ -424,63 +394,36 @@ namespace KGE
                case(DIRICHLET):
                {
                   double G = sqrt( square(wave_speed) + square(alpha) / square(pi) );
-                  result   = sin(pi * (p[0] - G*t));
-                  break;
+                  return sin(pi * (p[0] - G*t));
                }
                case(NEUMANN):
-               {
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]);
-                  break;
-               }
+                  return 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]);
                case(SOMMERFELD):
-               {
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * ( sin(pi*p[0]) + cos(pi*p[0]) );
-                  break;
-               }
+                  return 1.0/sqrt(k) * sin(sqrt(k)*t) * ( sin(pi*p[0]) + cos(pi*p[0]) );
                default:
                   throw invalid_argument("Inappropriate boundary conditions were specified");
             }
          }
 
-         else if(dim == 2)
+         else if(dim >= 2)
          {
-            double k  = 2.0 * square(wave_speed) * square(pi) + square(alpha);
+            double k = double(dim) * square(wave_speed) * square(pi) + square(alpha);
+            double result = 1.0/sqrt(k) * sin(sqrt(k)*t);
             switch(bc)
             {
                case(DIRICHLET):
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]);
-                  break;
+                  for(int i = 0; i < dim; ++i) result *= sin(pi*p[i]);
+                  return result;
                case(NEUMANN):
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]);
-                  break;
+                  for(int i = 0; i < dim; ++i) result *= cos(pi*p[i]);
+                  return result;
                case(SOMMERFELD):
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]);
-                  break;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
+                  for(int i = 0; i < dim; ++i) result *= cos(pi*p[i]);
+                  return result;
+               default: throw invalid_argument("Inappropriate boundary conditions were specified");
             }
          }
 
-         else if(dim == 3)
-         {
-            double k  = 3.0 * square(wave_speed) * square(pi) + square(alpha);
-            switch(bc)
-            {
-               case(DIRICHLET):
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]) * sin(pi*p[2]);
-                  break;
-               case(NEUMANN):
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
-                  break;
-               case(SOMMERFELD):
-                  result = 1.0/sqrt(k) * sin(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
-                  break;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-         }
-
-         return result;
       }
 
       private:
@@ -512,7 +455,6 @@ namespace KGE
          using namespace std;
          double pi = numbers::PI;
          double t  = this->get_time();
-         double result = 0.0;
 
          if(dim == 1)
          {
@@ -522,63 +464,36 @@ namespace KGE
                case(DIRICHLET):
                {
                   double G = sqrt( square(wave_speed) + square(alpha) / square(pi) );
-                  result   = -pi * G * cos(pi * (p[0] - G*t));
-                  break;
+                  return -pi * G * cos(pi * (p[0] - G*t));
                }
                case(NEUMANN):
-               {
-                  result = cos(sqrt(k)*t) * sin(pi*p[0]);
-                  break;
-               }
+                  return cos(sqrt(k)*t) * sin(pi*p[0]);
                case(SOMMERFELD):
-               {
-                  result = cos(sqrt(k)*t) * ( sin(pi*p[0]) + cos(pi*p[0]) );
-                  break;
-               }
+                  return cos(sqrt(k)*t) * ( sin(pi*p[0]) + cos(pi*p[0]) );
                default:
                   throw invalid_argument("Inappropriate boundary conditions were specified");
             }
          }
 
-         else if(dim == 2)
+         else if(dim >= 2)
          {
-            double k = 2.0 * square(wave_speed) * square(pi) + square(alpha);
+            double k = double(dim) * square(wave_speed) * square(pi) + square(alpha);
+            double result = cos(sqrt(k)*t);
             switch(bc)
             {
                case(DIRICHLET):
-                  result = cos(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]);
-                  break;
+                  for(int i = 0; i < dim; ++i) result *= sin(pi*p[i]);
+                  return result;
                case(NEUMANN):
-                  result = cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]);
-                  break;
+                  for(int i = 0; i < dim; ++i) result *= cos(pi*p[i]);
+                  return result;
                case(SOMMERFELD):
-                  result = cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]);
-                  break;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
+                  for(int i = 0; i < dim; ++i) result *= cos(pi*p[i]);
+                  return result;
+               default: throw invalid_argument("Inappropriate boundary conditions were specified");
             }
          }
 
-         else if(dim == 3)
-         {
-            double k  = 3.0 * square(wave_speed) * square(pi) + square(alpha);
-            switch(bc)
-            {
-               case(DIRICHLET):
-                  result = cos(sqrt(k)*t) * sin(pi*p[0]) * sin(pi*p[1]) * sin(pi*p[2]);
-                  break;
-               case(NEUMANN):
-                  result = cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
-                  break;
-               case(SOMMERFELD):
-                  result = cos(sqrt(k)*t) * cos(pi*p[0]) * cos(pi*p[1]) * cos(pi*p[2]);
-                  break;
-               default:
-                  throw invalid_argument("Inappropriate boundary conditions were specified");
-            }
-         }
-
-         return result;
       }
 
    private:
